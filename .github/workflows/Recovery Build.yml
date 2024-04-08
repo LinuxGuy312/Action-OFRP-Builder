@@ -41,6 +41,14 @@ on:
         description: 'BUILD_TARGET'
         required: true
         default: 'recovery'
+      USE_LATEST_MAGISK:
+        type: choice
+        description: 'USE_LATEST_MAGISK'
+        default: 'No'
+        required: false
+        options:
+        - 'Yes'
+        - 'No'
 
 jobs:
   build:
@@ -125,6 +133,10 @@ jobs:
         set +e
         source build/envsetup.sh
         export ALLOW_MISSING_DEPENDENCIES=true
+        if [ "${{ github.event.inputs.choice }}" == "Yes" ]; then
+          latest_tag=$(curl -s https://api.github.com/repos/topjohnwu/Magisk/releases/latest | grep "tag_name" | sed -E 's/.*"([^"]+)".*/\1/');wget -O Magisk.zip https://github.com/topjohnwu/Magisk/releases/download/$latest_tag/Magisk-$latest_tag.apk
+          export FOX_USE_SPECIFIC_MAGISK_ZIP=$(pwd)/Magisk.zip
+        fi
         set -e
         lunch ${{ github.event.inputs.MAKEFILE_NAME }}-eng && make clean && mka ${{ github.event.inputs.BUILD_TARGET }}image -j$(nproc --all)
       working-directory: ${{ steps.pwd.outputs.workspace-folder }}
